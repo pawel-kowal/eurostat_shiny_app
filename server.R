@@ -1,0 +1,87 @@
+library(shiny)
+library(data.table)
+library(googleVis)
+library(ggplot2)
+library(data.table)
+
+shinyServer(function(input, output) {
+
+    # lista z parametrami  
+    outVar <- reactiveValues(
+        selectYearVar = "2023",
+        selectGenderVar = "Kobieta"
+    )
+    
+    # pobranie wieku
+    observeEvent(input$selectYear,{
+      outVar$selectYearVar <- input$selectYear
+    })
+    
+    # pobranie plci
+    observeEvent(input$selectGender,{
+      outVar$selectGenderVar <- input$selectGender
+    })
+    
+    # pobranie danych (przygotowanie zmiennej na podstawie przycisku)
+    v <- reactiveValues(dataLoadDownload = FALSE)
+    
+    observeEvent(input$getDataFromServer,{
+      v$dataLoadDownload <- !v$dataLoadDownload
+    })
+    
+    # pobranie danych ze stronki
+    dataIn <- reactive({
+      if(v$dataLoadDownload==TRUE){
+        try({
+          dataDir<- getwd()#file.path(getwd(),"data")
+          download.file(url="https://ec.europa.eu/eurostat/estat-navtree-portlet-prod/BulkDownloadListing?file=data/demo_r_mwk_ts.tsv.gz",
+                        destfile=file.path(dataDir,"demo_r_mwk_ts.tsv.gz"),method="libcurl")
+          d <- read.table(file=file.path(dataDir,"demo_r_mwk_ts.tsv.gz"),sep="\t",dec=".",header=T)
+          countries <- c('AM','AT','BE','BG','CH','CY','CZ','DE','DK','EE','EL','ES','FI','FR','HR','HU','IE','IS','IT','LI','LT','LU','LV','MT','NL','NO','PL','PT','RO','RS','SE','SI','SK')
+          x <- as.data.frame(rbindlist(lapply(countries,function(country){
+            x <- t(d[grep(country,d[,1]),])
+            x <- x[-1,]
+            options(warn=-1)
+            x <- data.frame(
+              week = gsub("X","",rownames(x)), 
+              f = as.integer(gsub(" p","",x[,1])),
+              m = as.integer(gsub(" p","",x[,2])),
+              t = as.integer(gsub(" p","",x[,3])),
+              c = country
+            )
+            options(warn=0)
+            rownames(x) <- NULL
+            x <- x[order(x$week),]
+          })))
+          rownames(x) <- NULL
+          return(x)
+        })
+        return(data.frame())  
+        
+      }else if (v$dataLoadDownload==FALSE){
+        
+        try({
+          return(data.frame())
+        },silent=T)
+        
+      }
+      return(data.frame())
+    })
+
+    
+    # wyswietlenie danych w tabelce (dla pewnosci, ze sie pobralo dobrze)
+    output$dataSample <- DT::renderDataTable({
+          DT::datatable(  
+                      dataIn(), 
+                      rownames = FALSE,
+                      options = list(
+                          scrollX = TRUE,
+                          pageLength = 16,
+                          lengthMenu = seq(from=2,by=2,to=16) 
+                        )
+        )
+    })
+
+    
+
+})
