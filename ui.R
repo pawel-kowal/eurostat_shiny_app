@@ -13,7 +13,7 @@ shinyUI(fluidPage(
             actionButton("getDataFromServer", "Pobierz dane"),
             selectInput("selectYear",
                 label = "Rok danych",
-                choices = as.vector(as.character(2023:2010),mode="list")
+                choices = as.vector(as.character(2023:2000),mode="list")
             ),
             selectInput("selectGender",
                         label = "Plec",
@@ -23,7 +23,8 @@ shinyUI(fluidPage(
 
         mainPanel(
             tabsetPanel(type = "tabs",
-                tabPanel("Moja tabela", DT::dataTableOutput("dataSample"))
+                tabPanel("Moja tabela", DT::dataTableOutput("dataSample")),
+                tabPanel("Mapka",htmlOutput("view"))
             )
         )
     )

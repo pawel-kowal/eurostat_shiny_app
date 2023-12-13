@@ -44,16 +44,18 @@ shinyServer(function(input, output) {
             options(warn=-1)
             x <- data.frame(
               week = gsub("X","",rownames(x)), 
-              f = as.integer(gsub(" p","",x[,1])),
-              m = as.integer(gsub(" p","",x[,2])),
-              t = as.integer(gsub(" p","",x[,3])),
-              c = country
+              female = as.integer(gsub(" p","",x[,1])),
+              male = as.integer(gsub(" p","",x[,2])),
+              total = as.integer(gsub(" p","",x[,3])),
+              country = country
             )
             options(warn=0)
             rownames(x) <- NULL
             x <- x[order(x$week),]
           })))
           rownames(x) <- NULL
+          x[is.na(x)] <- 0
+          x['year'] <- as.numeric(substr(x$week,1,4))
           return(x)
         })
         return(data.frame())  
@@ -81,7 +83,23 @@ shinyServer(function(input, output) {
                         )
         )
     })
-
+    
+    # stworzenie i wyswietlenie mapy
+    output$view <- renderGvis({
+      if(nrow(dataIn())){
+        geoData <- dataIn()
+        geoDataAggFem <- aggregate(female ~ year+country, data = geoData, sum)
+        colnames(geoDataAggFem) <-c('year','country','sum')
+        geoDataAggMal <- aggregate(male ~ year+country, data = geoData, sum)
+        colnames(geoDataAggMal) <-c('year','country','sum')
+        gvisGeoChart(if(outVar$selectGenderVar == "Kobieta") subset(geoDataAggFem, year==outVar$selectYearVar) else subset(geoDataAggMal, year==outVar$selectYearVar), "country", 'sum',
+                     options=list(region="150",
+                                  width=800, height=800))
+        }else{
+        return(NULL)
+      }
+    })
     
 
 })
+
