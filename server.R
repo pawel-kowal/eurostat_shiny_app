@@ -77,23 +77,7 @@ shinyServer(function(input, output) {
     return(data.frame())
   })
   
-  
-  # wyswietlenie danych w tabelce (dla pewnosci, ze sie pobralo dobrze)
-  output$dataSample <- DT::renderDataTable({
-    DT::datatable(  
-      dataIn(), 
-      rownames = FALSE,
-      options = list(
-        scrollX = TRUE,
-        pageLength = 16,
-        lengthMenu = seq(from=2,by=2,to=16) 
-      )
-    )
-  })
-  
-  
-  
-  
+
   # wyswietlenie danych w tabelce
   output$tabelka <- DT::renderDataTable({
     
